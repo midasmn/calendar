@@ -2,7 +2,7 @@
 
 require 'simple_html_dom.php';
 
-require 'lib/mysql-ini.php';
+require '/home/midasmn/faceapglezon.info/public_html/calendar/lib/mysql-ini.php';
 // データベースに接続
 $db_conn = new mysqli($host, $user, $pass, $dbname)
 or die("データベースとの接続に失敗しました");
