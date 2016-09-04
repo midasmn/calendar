@@ -7,17 +7,43 @@ require 'simple_html_dom.php';
 $db_conn = new mysqli($host, $user, $pass, $dbname)
 or die("データベースとの接続に失敗しました");
 $db_conn->set_charset('utf8');
-// $result = mysqli_query($db_conn,$sql);
-// $cnt = 16;
 
-
+//////////////////////////////
+//Yahoo形態素
+////////////////////////////////
+function f_yahoo_morpheme($description)
+{
+    $rtn_st = "";
+    //アプリケーションIDのセット
+    $appid = "dj0zaiZpPVJXSGJNOTdoeWEwTSZzPWNvbnN1bWVyc2VjcmV0Jng9Mjc-";
+    //形態素解析したい文章
+    // mb_language('Japanese');//←これ
+    $description=mb_convert_encoding($description,'UTF-8','auto');
+    $word = $description;
+    //URLの組み立て
+    $url = "http://jlp.yahooapis.jp/MAService/V1/parse?appid=".$appid."&results=ma,uniq&uniq_filter=9&sentence=".urlencode($word);
+    //戻り値をパースする
+    $parse = simplexml_load_file($url);
+    //戻り値（オブジェクト）からループでデータを取得する
+    foreach($parse->ma_result->word_list->word as $value){
+        //品詞を「,」で区切る
+        $tmp_st = $value->surface;
+        if(strlen($tmp_st)>1){
+            $rtn_st .= $value->surface;
+            $rtn_st .=  ",";    //カンマ区切りに
+        }
+    }
+    return $rtn_st;
+}
 //インサート
 function f_insert_ymd($db_conn,$calendar_id,$yyyy,$mm,$dd,$list_title,$img_path,$img_alt,$href,$order)
 {
    mb_language('Japanese');//←これ
    $img_alt=mb_convert_encoding($img_alt,'UTF-8','auto');
+   // 
+   $tag = f_yahoo_morpheme($img_alt);
 
-    $sql = "INSERT INTO `tbl_ymd`(`id`, `calendar_id`, `yyyy`, `mm`, `dd`, `name`,`img_path`, `img_alt`, `href`, `order`, `createdate`) VALUES (NULL, '$calendar_id', '$yyyy', '$mm', '$dd', '$list_title','$img_path', '$img_alt', '$href', '$order', CURRENT_TIMESTAMP)";
+    $sql = "INSERT INTO `tbl_ymd`(`id`, `calendar_id`, `yyyy`, `mm`, `dd`, `name`,`img_path`, `img_alt`, `href`, `order`, `tag`,`createdate`) VALUES (NULL, '$calendar_id', '$yyyy', '$mm', '$dd', '$list_title','$img_path', '$img_alt', '$href', '$order', '$tag', CURRENT_TIMESTAMP)";
     $result = mysqli_query($db_conn,$sql);
     if(!$result)
     {
@@ -36,13 +62,10 @@ function f_update_flg($db_conn,$node)
 
 
 //amazonランキング画像取得
-// $get_url = 'http://www.amazon.co.jp/gp/bestsellers/books/2278488051'; //アマゾンコミックベストセラー
-// function f_amazon_scrape_img($db_conn,$exm_url,$calendar_id,$yyyy,$mm,$dd)
 function f_amazon_scrape_img($db_conn,$get_url,$calendar_id,$description,$yyyy,$mm,$dd)
 {
     $assoc_tag = '/tag=mittellogeblo-22';
     $get_url .= $assoc_tag;
-// echo "<br>".$get_url."<br>";
     $rtn = array();
     // 画像取得
     // // 文字化け対策のおまじない的（？）なもの。
@@ -75,7 +98,7 @@ function f_amazon_scrape_img($db_conn,$get_url,$calendar_id,$description,$yyyy,$
     $rtn_imgs = $rtn;
     //DB
     $cnt = count($rtn_imgs['img']);
-    $cnt = 6;
+    $cnt = 4;
     $i = 0;
     while ($i  <= $cnt) 
     {
@@ -92,10 +115,6 @@ function f_amazon_scrape_img($db_conn,$get_url,$calendar_id,$description,$yyyy,$
 $yyyy = date('Y');
 $mm = date('m');
 $dd = date('d');
-
-// $yyyy="2015";
-// $mm="9";
-// $dd="3";
 
 //////////////////
 // DBからNODES読み込み

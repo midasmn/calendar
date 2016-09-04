@@ -8,14 +8,43 @@ require '/home/midasmn/faceapglezon.info/public_html/calendar/lib/mysql-ini.php'
 $db_conn = new mysqli($host, $user, $pass, $dbname)
 or die("データベースとの接続に失敗しました");
 $db_conn->set_charset('utf8');
-// $result = mysqli_query($db_conn,$sql);
+
+//////////////////////////////
+//Yahoo形態素
+////////////////////////////////
+function f_yahoo_morpheme($description)
+{
+    $rtn_st = "";
+    //アプリケーションIDのセット
+    $appid = "dj0zaiZpPVJXSGJNOTdoeWEwTSZzPWNvbnN1bWVyc2VjcmV0Jng9Mjc-";
+    //形態素解析したい文章
+    // mb_language('Japanese');//←これ
+    $description=mb_convert_encoding($description,'UTF-8','auto');
+    $word = $description;
+    //URLの組み立て
+    $url = "http://jlp.yahooapis.jp/MAService/V1/parse?appid=".$appid."&results=ma,uniq&uniq_filter=9&sentence=".urlencode($word);
+    //戻り値をパースする
+    $parse = simplexml_load_file($url);
+    //戻り値（オブジェクト）からループでデータを取得する
+    foreach($parse->ma_result->word_list->word as $value){
+        //品詞を「,」で区切る
+        $tmp_st = $value->surface;
+        if(strlen($tmp_st)>1){
+            $rtn_st .= $value->surface;
+            $rtn_st .=  ",";    //カンマ区切りに
+        }
+    }
+    return $rtn_st;
+}
 //インサート
 function f_insert_ymd($db_conn,$calendar_id,$yyyy,$mm,$dd,$list_title,$img_path,$img_alt,$href,$order)
 {
    mb_language('Japanese');//←これ
    $img_alt=mb_convert_encoding($img_alt,'UTF-8','auto');
+   // 
+   $tag = f_yahoo_morpheme($img_alt);
 
-    $sql = "INSERT INTO `tbl_ymd`(`id`, `calendar_id`, `yyyy`, `mm`, `dd`, `name`,`img_path`, `img_alt`, `href`, `order`, `createdate`) VALUES (NULL, '$calendar_id', '$yyyy', '$mm', '$dd', '$list_title','$img_path', '$img_alt', '$href', '$order', CURRENT_TIMESTAMP)";
+    $sql = "INSERT INTO `tbl_ymd`(`id`, `calendar_id`, `yyyy`, `mm`, `dd`, `name`,`img_path`, `img_alt`, `href`, `order`, `tag`,`createdate`) VALUES (NULL, '$calendar_id', '$yyyy', '$mm', '$dd', '$list_title','$img_path', '$img_alt', '$href', '$order', '$tag', CURRENT_TIMESTAMP)";
     $result = mysqli_query($db_conn,$sql);
     if(!$result)
     {
@@ -25,6 +54,7 @@ function f_insert_ymd($db_conn,$calendar_id,$yyyy,$mm,$dd,$list_title,$img_path,
     }
     return $rtn;
 }
+
 /////////////
 function f_update_flg($db_conn,$node)
 {
