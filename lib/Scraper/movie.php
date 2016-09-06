@@ -64,12 +64,12 @@ $w = date('w');//曜日 1=月曜日
 $calendar_id = 350; //yahoo人物デイリー総数
 $list_title = "日本映画興行成績ランキング(月曜更新)";
 $get_href = "http://movie.walkerplus.com/ranking/japan/";
-$rtn_st = f_moveie($db_conn,$calendar_id,$list_title,$get_href,$yyyy,$mm,$dd);
+$rtn_st = f_moveie($db_conn,$calendar_id,$list_title,$get_href,$yyyy,$mm,$dd,$w);
 echo $rtn_st;
 $calendar_id = 351; //yahoo人物デイリー総数
 $list_title = "全米映画興行成績ランキング(月曜更新)";
 $get_href = "http://movie.walkerplus.com/ranking/usa/";
-$rtn_st = f_moveie($db_conn,$calendar_id,$list_title,$get_href,$yyyy,$mm,$dd);
+$rtn_st = f_moveie($db_conn,$calendar_id,$list_title,$get_href,$yyyy,$mm,$dd,$w);
 echo $rtn_st;
 //////////////////
 /////////////////
@@ -88,16 +88,12 @@ function f_moveie($db_conn,$calendar_id,$list_title,$get_href,$yyyy,$mm,$dd)
         foreach ($html->find('.movieMeta img') as $element)
         {
             $rtn['img'][$img_cnt] = $element->src; 
-            // echo "<br>".$rtn['img'][$img_cnt];
-            // $rtn['img'][$img_cnt] = str_replace('%22', '', $element->src); 
-            // echo "<br>".$img_cnt."<img src=".$rtn['img'][$img_cnt].">";
             $img_cnt++;
         }
         //タイトル
          foreach ($html->find('.movieInfo strong a') as $element)
         {
             $rtn['title'][$title_cnt] = $element->plaintext; 
-            // echo "<br>".$artist_cnt."title".$rtn['title'][$title_cnt];
             $title_cnt++;
         }
         $rtn_imgs = $rtn;
@@ -110,9 +106,7 @@ function f_moveie($db_conn,$calendar_id,$list_title,$get_href,$yyyy,$mm,$dd)
             //insert
             $rtn = f_insert_ymd($db_conn,$calendar_id,$yyyy,$mm,$dd,$list_title,$rtn_imgs['img'][$i],$rtn_imgs['title'][$i],"",$i+1);
             $i++;
-        // echo "<br>".$i;
         }  
-
         // 解放する
         $html->clear();
         unset($rtn);
